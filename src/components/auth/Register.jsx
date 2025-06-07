@@ -172,7 +172,7 @@ const Register = ({ onSwitchView }) => {
               onClick={togglePasswordVisibility}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? "🙉" : "👁️"}
+              {showPassword ? "👁️" : "👁️‍🗨️"}
             </button>
           </div>
         </div>
