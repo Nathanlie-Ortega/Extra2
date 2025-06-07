@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Register.css';
 
-const Register = ({ onSwitchView }) => {
+const Register = ({ onSwitchView, onUserUpdate }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -73,16 +73,22 @@ const Register = ({ onSwitchView }) => {
         
         console.log('✅ Profile updated');
         
-        // Store user data
+        // Store user data with the correct name
         const userData = {
           uid: userCredential.user.uid,
           name: name,
           email: email,
+          password: password, // Store initial password
           registeredAt: new Date().toISOString(),
           isLoggedIn: true,
           provider: 'firebase'
         };
         localStorage.setItem('allRecipesUser', JSON.stringify(userData));
+        
+        // Update parent component with new user data
+        if (onUserUpdate) {
+          onUserUpdate(userData);
+        }
         
         console.log('🎉 Registration successful! Check Firebase Console!');
         navigate('/');
@@ -98,7 +104,25 @@ const Register = ({ onSwitchView }) => {
         } else if (firebaseError.code === 'auth/invalid-email') {
           throw new Error('Please enter a valid email address.');
         } else {
-          throw new Error('Registration failed: ' + firebaseError.message);
+          // Fallback to localStorage if Firebase is not available
+          console.warn('Firebase not available, using localStorage fallback');
+          const userData = {
+            name: name,
+            email: email,
+            password: password, // Store initial password
+            registeredAt: new Date().toISOString(),
+            isLoggedIn: true,
+            provider: 'localStorage'
+          };
+          localStorage.setItem('allRecipesUser', JSON.stringify(userData));
+          
+          // Update parent component with new user data
+          if (onUserUpdate) {
+            onUserUpdate(userData);
+          }
+          
+          console.log('✅ Registration successful with localStorage fallback:', { name, email });
+          navigate('/');
         }
       }
       

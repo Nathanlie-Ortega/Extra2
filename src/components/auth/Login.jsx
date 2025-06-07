@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
-const Login = ({ onSwitchView }) => {
+const Login = ({ onSwitchView, onUserUpdate }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -63,6 +63,12 @@ const Login = ({ onSwitchView }) => {
           provider: 'firebase'
         };
         localStorage.setItem('allRecipesUser', JSON.stringify(userData));
+        
+        // Update parent component with user data
+        if (onUserUpdate) {
+          onUserUpdate(userData);
+        }
+        
         console.log('✅ Login successful with Firebase:', { 
           email: firebaseResult.email, 
           uid: firebaseResult.uid 
@@ -87,15 +93,60 @@ const Login = ({ onSwitchView }) => {
           throw new Error('Invalid email or password. Please check your credentials.');
         } else {
           // Fallback to localStorage if Firebase is not available
-          console.warn('Firebase not available, using localStorage fallback');
-          const userData = {
-            email: email,
-            isLoggedIn: true,
-            loginAt: new Date().toISOString(),
-            provider: 'localStorage'
-          };
-          localStorage.setItem('allRecipesUser', JSON.stringify(userData));
-          console.log('✅ Login successful with localStorage fallback:', { email });
+          console.warn('Firebase not available, checking localStorage for existing user');
+          
+          // Check if user exists in localStorage from registration
+          const existingUser = localStorage.getItem('allRecipesUser');
+          if (existingUser) {
+            const userData = JSON.parse(existingUser);
+            console.log('🔍 LOGIN DEBUG - Full localStorage data:', userData);
+            console.log('🔍 LOGIN DEBUG - Email match:', userData.email === email);
+            console.log('🔍 LOGIN DEBUG - Stored password:', userData.password);
+            console.log('🔍 LOGIN DEBUG - Entered password:', password);
+            console.log('🔍 LOGIN DEBUG - Password match:', userData.password === password);
+            
+            if (userData.email === email) {
+              // MANDATORY password check - no exceptions
+              if (!userData.password) {
+                console.log('⚠️ No password stored - cannot login without password');
+                throw new Error('Account setup incomplete. Please register again or contact support.');
+              }
+              
+              // STRICT password validation
+              if (userData.password !== password) {
+                console.log('❌ LOGIN FAILED - Password does not match!');
+                console.log('Expected password:', userData.password);
+                console.log('Received password:', password);
+                throw new Error('Invalid email or password. Please check your credentials.');
+              }
+              
+              console.log('✅ LOGIN SUCCESS - Password matches!');
+              
+              // Update login status but preserve all existing user data
+              const updatedUserData = {
+                ...userData, // Keep ALL existing data including the password
+                isLoggedIn: true,
+                loginAt: new Date().toISOString(),
+                provider: userData.provider || 'localStorage'
+              };
+              
+              console.log('💾 Saving login session data:', updatedUserData);
+              localStorage.setItem('allRecipesUser', JSON.stringify(updatedUserData));
+              
+              // Update parent component with user data
+              if (onUserUpdate) {
+                onUserUpdate(updatedUserData);
+              }
+              
+              console.log('✅ Login completed successfully');
+            } else {
+              console.log('❌ Email does not match stored email');
+              throw new Error('Invalid email or password. Please check your credentials.');
+            }
+          } else {
+            console.log('❌ No user data found in localStorage');
+            throw new Error('No account found. Please register first.');
+          }
         }
       }
       

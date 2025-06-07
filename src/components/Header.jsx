@@ -13,6 +13,30 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Helper function to get user from localStorage
+const getLocalStorageUser = () => {
+  try {
+    const userData = localStorage.getItem('allRecipesUser');
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      if (parsedUser.isLoggedIn) {
+        // Check if there's a separately saved profile picture
+        const savedProfilePicture = localStorage.getItem(`profilePicture_${parsedUser.email}`);
+        if (savedProfilePicture && !parsedUser.profilePicture) {
+          parsedUser.profilePicture = savedProfilePicture;
+          localStorage.setItem('allRecipesUser', JSON.stringify(parsedUser));
+        }
+        return parsedUser;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error parsing user data:', error);
+    localStorage.removeItem('allRecipesUser');
+    return null;
+  }
+};
+
   // Firebase auth state listener
   const setupFirebaseListener = async () => {
     try {
@@ -22,16 +46,25 @@ const Header = () => {
       // Listen for authentication state changes
       const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         if (firebaseUser) {
-          // User is signed in with Firebase
-          const userData = {
-            uid: firebaseUser.uid,
-            name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-            email: firebaseUser.email,
-            isLoggedIn: true,
-            provider: 'firebase'
-          };
-          setUser(userData);
-          localStorage.setItem('allRecipesUser', JSON.stringify(userData));
+          // User is signed in with Firebase - check localStorage for updates
+          const localUser = getLocalStorageUser();
+          if (localUser && localUser.email === firebaseUser.email) {
+            setUser({...localUser}); // Use localStorage data which may have profile picture
+          } else {
+            // Create new user data from Firebase, but preserve any existing profile picture
+            const existingUser = getLocalStorageUser();
+            const userData = {
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+              email: firebaseUser.email,
+              isLoggedIn: true,
+              provider: 'firebase',
+              // Preserve profile picture if it exists
+              ...(existingUser?.profilePicture && { profilePicture: existingUser.profilePicture })
+            };
+            setUser(userData);
+            localStorage.setItem('allRecipesUser', JSON.stringify(userData));
+          }
         } else {
           // Check localStorage for fallback
           checkLocalStorageUser();
@@ -50,23 +83,8 @@ const Header = () => {
 
   // Check localStorage for user data
   const checkLocalStorageUser = () => {
-    try {
-      const userData = localStorage.getItem('allRecipesUser');
-      if (userData) {
-        const parsedUser = JSON.parse(userData);
-        if (parsedUser.isLoggedIn) {
-          setUser(parsedUser);
-        } else {
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      localStorage.removeItem('allRecipesUser');
-      setUser(null);
-    }
+    const localUser = getLocalStorageUser();
+    setUser(localUser);
   };
 
   useEffect(() => {
@@ -77,13 +95,31 @@ const Header = () => {
       unsubscribe = unsub;
     });
 
+    // Listen for localStorage changes and force re-render
+    const handleStorageChange = () => {
+      const localUser = getLocalStorageUser();
+      if (localUser && localUser.email === user?.email) {
+        setUser({...localUser}); // Force new object reference for re-render
+      } else if (!localUser) {
+        setUser(null);
+      }
+    };
+
+    // Check for updates every 500ms (for same-tab updates)
+    const interval = setInterval(handleStorageChange, 500);
+    
+    // Listen for storage events (cross-tab updates)
+    window.addEventListener('storage', handleStorageChange);
+
     // Cleanup subscription on unmount
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [user?.email]);
 
   const handleAuthClick = () => {
     if (user) {
@@ -125,7 +161,7 @@ const Header = () => {
   };
 
   const handleUserUpdate = (updatedUser) => {
-    setUser(updatedUser);
+    setUser({...updatedUser}); // Force new object reference
     localStorage.setItem('allRecipesUser', JSON.stringify(updatedUser));
   };
 
@@ -177,7 +213,7 @@ const Header = () => {
               width: '40px',
               height: '40px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #ff6b35, #f7931e)',
+              background: user.profilePicture ? 'transparent' : 'linear-gradient(135deg, #ff6b35, #f7931e)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -186,10 +222,26 @@ const Header = () => {
               fontSize: '0.9rem',
               letterSpacing: '0.5px',
               boxShadow: '0 2px 10px rgba(255, 107, 53, 0.3)',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              overflow: 'hidden'
             }}
           >
-            {getInitials(user.name || user.email)}
+            {user.profilePicture ? (
+              <img 
+                src={user.profilePicture} 
+                alt="Profile" 
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                  borderRadius: '50%',
+                  display: 'block'
+                }}
+              />
+            ) : (
+              getInitials(user.name || user.email)
+            )}
           </div>
         ) : (
           // Show login icon when not logged in

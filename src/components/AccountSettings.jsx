@@ -1,69 +1,75 @@
-// src/components/AccountSettings.jsx - User Account Management
-import React, { useState, useEffect } from 'react';
+// src/components/AccountSettings.jsx
+import React, { useState } from 'react';
 import './AccountSettings.css';
 
 const AccountSettings = ({ user, onClose, onUserUpdate }) => {
   const [formData, setFormData] = useState({
     name: user.name || '',
-    email: user.email || '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    email: user.email || '', // Email will be read-only
   });
-  const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Check email/password change limits
-  const getChangeHistory = () => {
-    const history = localStorage.getItem('changeHistory') || '{}';
-    return JSON.parse(history);
-  };
-
-  const canChangeEmailOrPassword = () => {
-    const history = getChangeHistory();
-    const userHistory = history[user.email] || { emailChanges: [], passwordChanges: [] };
-    const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-    
-    const recentEmailChanges = userHistory.emailChanges.filter(
-      date => new Date(date) > twoWeeksAgo
-    ).length;
-    
-    const recentPasswordChanges = userHistory.passwordChanges.filter(
-      date => new Date(date) > twoWeeksAgo
-    ).length;
-
-    return {
-      canChangeEmail: recentEmailChanges < 3,
-      canChangePassword: recentPasswordChanges < 3,
-      emailChangesLeft: 3 - recentEmailChanges,
-      passwordChangesLeft: 3 - recentPasswordChanges
-    };
-  };
-
-  const recordChange = (type) => {
-    const history = getChangeHistory();
-    if (!history[user.email]) {
-      history[user.email] = { emailChanges: [], passwordChanges: [] };
-    }
-    
-    if (type === 'email') {
-      history[user.email].emailChanges.push(new Date().toISOString());
-    } else if (type === 'password') {
-      history[user.email].passwordChanges.push(new Date().toISOString());
-    }
-    
-    localStorage.setItem('changeHistory', JSON.stringify(history));
-  };
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    // Only allow name changes, email is read-only
+    if (e.target.name === 'name') {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      });
+      setError('');
+      setSuccess('');
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    setResetLoading(true);
     setError('');
     setSuccess('');
+
+    try {
+      const { auth } = await import('../config/firebase');
+      const { sendPasswordResetEmail } = await import('firebase/auth');
+      
+      // Set a flag that password reset is pending
+      localStorage.setItem('passwordResetPending', 'true');
+      localStorage.setItem('passwordResetInitiated', Date.now().toString());
+      
+      await sendPasswordResetEmail(auth, user.email);
+      setSuccess(`Password reset email sent to ${user.email}. Check your inbox and follow the instructions.`);
+      console.log('✅ Password reset email sent successfully');
+      console.log('🏃 Password reset monitoring started');
+      
+      // Start immediate monitoring for when user returns
+      setTimeout(() => {
+        // Force logout after 30 seconds to be safe
+        if (localStorage.getItem('passwordResetPending')) {
+          window.location.href = '/login';  // Force redirect to login
+        }
+      }, 30000);
+      
+    } catch (firebaseError) {
+      // Remove the pending flag if email send failed
+      localStorage.removeItem('passwordResetPending');
+      localStorage.removeItem('passwordResetInitiated');
+      
+      console.error('❌ Password reset failed:', firebaseError);
+      
+      // Handle common Firebase errors
+      if (firebaseError.code === 'auth/user-not-found') {
+        setError('No account found with this email address.');
+      } else if (firebaseError.code === 'auth/too-many-requests') {
+        setError('Too many password reset requests. Please wait before trying again.');
+      } else if (firebaseError.code === 'auth/invalid-email') {
+        setError('Invalid email address.');
+      } else {
+        setError('Failed to send password reset email. Please try again or contact support.');
+      }
+    }
+
+    setResetLoading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -73,10 +79,8 @@ const AccountSettings = ({ user, onClose, onUserUpdate }) => {
     setSuccess('');
 
     try {
-      const changes = canChangeEmailOrPassword();
       let updatedUser = { ...user };
-      let hasEmailChange = false;
-      let hasPasswordChange = false;
+      let hasNameChange = false;
 
       // Validate name change (always allowed)
       if (formData.name.trim() !== user.name) {
@@ -84,71 +88,45 @@ const AccountSettings = ({ user, onClose, onUserUpdate }) => {
           throw new Error('Name must be at least 2 characters long');
         }
         updatedUser.name = formData.name.trim();
+        hasNameChange = true;
       }
 
-      // Validate email change
-      if (formData.email !== user.email) {
-        if (!changes.canChangeEmail) {
-          throw new Error(`You can only change your email 3 times per 14 days. You have made 3 changes already.`);
-        }
-        
-        // Basic email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.email)) {
-          throw new Error('Please enter a valid email address');
-        }
-        
-        updatedUser.email = formData.email;
-        hasEmailChange = true;
+      // Only proceed if there are actual changes
+      if (!hasNameChange) {
+        setError('No changes to save.');
+        setLoading(false);
+        return;
       }
 
-      // Validate password change
-      if (showPasswordFields && formData.newPassword) {
-        if (!changes.canChangePassword) {
-          throw new Error(`You can only change your password 3 times per 14 days. You have made 3 changes already.`);
-        }
+      // Save to localStorage
+      localStorage.setItem('allRecipesUser', JSON.stringify(updatedUser));
 
-        if (formData.newPassword !== formData.confirmPassword) {
-          throw new Error('New passwords do not match');
+      // Try to update Firebase if available
+      try {
+        if (user.provider === 'firebase') {
+          const { auth } = await import('../config/firebase');
+          const { updateProfile } = await import('firebase/auth');
+          
+          if (auth.currentUser) {
+            await updateProfile(auth.currentUser, {
+              displayName: updatedUser.name
+            });
+            console.log('✅ Firebase profile updated');
+          }
         }
-
-        if (formData.newPassword.length < 6) {
-          throw new Error('Password must be at least 6 characters long');
-        }
-
-        // In a real app, you'd verify the current password here
-        hasPasswordChange = true;
+      } catch (firebaseError) {
+        console.warn('Firebase update failed, but localStorage updated:', firebaseError);
       }
 
-      // Record changes
-      if (hasEmailChange) {
-        recordChange('email');
-      }
-      if (hasPasswordChange) {
-        recordChange('password');
-      }
-
-      // Update user data
-      onUserUpdate(updatedUser);
-      
-      let successMessage = 'Account updated successfully!';
-      if (hasEmailChange || hasPasswordChange) {
-        const remaining = canChangeEmailOrPassword();
-        successMessage += ` Email changes remaining: ${remaining.emailChangesLeft}, Password changes remaining: ${remaining.passwordChangesLeft}`;
+      // Update parent component
+      if (onUserUpdate) {
+        onUserUpdate(updatedUser);
       }
       
-      setSuccess(successMessage);
-
-      // Reset form
-      setFormData({
-        ...formData,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      setShowPasswordFields(false);
+      setSuccess('Name updated successfully!');
 
     } catch (error) {
+      console.error('❌ Account update error:', error);
       setError(error.message);
     }
 
@@ -160,8 +138,6 @@ const AccountSettings = ({ user, onClose, onUserUpdate }) => {
       onClose();
     }
   };
-
-  const changes = canChangeEmailOrPassword();
 
   return (
     <div className="settings-overlay" onClick={handleOverlayClick}>
@@ -190,7 +166,7 @@ const AccountSettings = ({ user, onClose, onUserUpdate }) => {
             <small className="field-hint">You can change your name anytime</small>
           </div>
 
-          {/* Email Field */}
+          {/* Email Field - Read Only */}
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <input
@@ -198,76 +174,35 @@ const AccountSettings = ({ user, onClose, onUserUpdate }) => {
               id="email"
               name="email"
               value={formData.email}
-              onChange={handleInputChange}
-              placeholder="Enter your email"
-              required
+              readOnly
+              disabled
+              style={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+                cursor: 'not-allowed',
+                opacity: 0.7
+              }}
             />
-            <small className="field-hint">
-              Changes remaining: {changes.emailChangesLeft}/3 (per 14 days)
-            </small>
+            <small className="field-hint">Email cannot be changed</small>
           </div>
 
-          {/* Current Password Display */}
+          {/* Password Reset Section */}
           <div className="form-group">
-            <label>Current Password</label>
+            <label>Password</label>
             <div className="password-display">
               <span>{"*".repeat(12)}</span>
               <button
                 type="button"
-                className="change-password-btn"
-                onClick={() => setShowPasswordFields(!showPasswordFields)}
+                className={`change-password-btn ${resetLoading ? 'loading' : ''}`}
+                onClick={handlePasswordReset}
+                disabled={resetLoading}
               >
-                {showPasswordFields ? 'Cancel' : 'Change Password'}
+                {resetLoading ? 'Sending...' : 'Reset Password'}
               </button>
             </div>
+            <small className="field-hint">
+              Click "Reset Password" to receive an email with instructions to change your password
+            </small>
           </div>
-
-          {/* Password Change Fields */}
-          {showPasswordFields && (
-            <>
-              <div className="form-group">
-                <label htmlFor="currentPassword">Current Password</label>
-                <input
-                  type="password"
-                  id="currentPassword"
-                  name="currentPassword"
-                  value={formData.currentPassword}
-                  onChange={handleInputChange}
-                  placeholder="Enter current password"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="newPassword">New Password</label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  name="newPassword"
-                  value={formData.newPassword}
-                  onChange={handleInputChange}
-                  placeholder="Enter new password"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="confirmPassword">Confirm New Password</label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  placeholder="Confirm new password"
-                  required
-                />
-                <small className="field-hint">
-                  Changes remaining: {changes.passwordChangesLeft}/3 (per 14 days)
-                </small>
-              </div>
-            </>
-          )}
 
           {/* Submit Button */}
           <div className="form-actions">
