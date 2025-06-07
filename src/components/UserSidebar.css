@@ -1,0 +1,252 @@
+/* UserSidebar.css - Sidebar Styles */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  z-index: 2000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.user-sidebar {
+  width: 350px;
+  height: 100vh;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.3s ease-out;
+  overflow-y: auto;
+}
+
+.sidebar-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.sidebar-close:hover {
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.1);
+  transform: rotate(90deg);
+}
+
+.user-profile {
+  padding: 3rem 2rem 2rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+  animation: pulse 2s infinite;
+}
+
+.user-initials-large {
+  color: white;
+  font-weight: 700;
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+}
+
+.user-info {
+  margin-top: 1rem;
+}
+
+.user-name {
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.user-email {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin: 0;
+  word-break: break-word;
+}
+
+.sidebar-menu {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+.menu-item {
+  width: 100%;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 1.2rem 2rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  position: relative;
+}
+
+.menu-item:hover {
+  background: rgba(255, 107, 53, 0.1);
+  color: #ff6b35;
+  padding-left: 2.5rem;
+}
+
+.menu-item:active {
+  background: rgba(255, 107, 53, 0.2);
+}
+
+.menu-icon {
+  font-size: 1.2rem;
+  min-width: 24px;
+}
+
+.menu-arrow {
+  margin-left: auto;
+  font-size: 1.1rem;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.menu-item:hover .menu-arrow {
+  opacity: 1;
+  transform: translateX(5px);
+}
+
+.logout-item {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 100, 100, 0.8);
+}
+
+.logout-item:hover {
+  background: rgba(255, 100, 100, 0.1);
+  color: #ff6464;
+}
+
+.sidebar-footer {
+  padding: 1rem 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.sidebar-footer p {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .user-sidebar {
+    width: 100%;
+  }
+  
+  .user-profile {
+    padding: 2.5rem 1.5rem 1.5rem;
+  }
+  
+  .user-avatar-large {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .user-initials-large {
+    font-size: 1.6rem;
+  }
+  
+  .user-name {
+    font-size: 1.2rem;
+  }
+  
+  .menu-item {
+    padding: 1rem 1.5rem;
+  }
+  
+  .menu-item:hover {
+    padding-left: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-avatar-large {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .user-initials-large {
+    font-size: 1.4rem;
+  }
+  
+  .user-name {
+    font-size: 1.1rem;
+  }
+  
+  .menu-item {
+    padding: 0.9rem 1rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { 
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to { 
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+  }
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 0 6px 25px rgba(255, 107, 53, 0.4);
+  }
+}
+
+/* Focus states for accessibility */
+.sidebar-close:focus-visible,
+.menu-item:focus-visible {
+  outline: 2px solid #ff6b35;
+  outline-offset: 2px;
+}
