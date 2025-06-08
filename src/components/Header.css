@@ -12,6 +12,7 @@
     justify-content: space-between;
     align-items: center;
 }
+
 .header-container h1 
 {
     font-family: 'Satisfy';
@@ -20,10 +21,41 @@
     gap: 5px;
     color:white;
 }
+
 .header-container a 
 {
     text-decoration: none;
 }
+
+/* Navigation Menu */
+.header-nav {
+    display: flex;
+    gap: 30px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 8px 16px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-link:hover {
+    color: #ff6b35;
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.nav-link.active {
+    color: #ff6b35;
+    background: rgba(255, 107, 53, 0.15);
+}
+
 .user-img
 {
     font-size: 30px;

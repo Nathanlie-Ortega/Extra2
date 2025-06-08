@@ -183,6 +183,12 @@ const getLocalStorageUser = () => {
             <GiSpoon />
           </h1>
         </Link>
+        
+        {/* Navigation Menu */}
+        <nav className="header-nav">
+          <Link to="/" className="nav-link">Home</Link>
+        </nav>
+        
         <BiSolidUserCircle 
           className='user-img' 
           style={{ opacity: 0.5 }}
@@ -201,6 +207,11 @@ const getLocalStorageUser = () => {
             <GiSpoon />
           </h1>
         </Link>
+        
+        {/* Navigation Menu */}
+        <nav className="header-nav">
+          <Link to="/" className="nav-link">Home</Link>
+        </nav>
         
         {user ? (
           // Show user avatar when logged in
