@@ -33,6 +33,7 @@
     gap: 30px;
     margin-left: auto;
     margin-right: auto;
+    align-items: center;
 }
 
 .nav-link {
@@ -44,6 +45,9 @@
     border-radius: 20px;
     transition: all 0.3s ease;
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .nav-link:hover {
@@ -51,13 +55,124 @@
     background: rgba(255, 107, 53, 0.1);
 }
 
-.nav-link.active {
+/* REMOVED: .nav-link.active styles that were causing orange background */
+
+/* Favorites Link Specific Styles */
+.favorites-link {
+    position: relative;
+}
+
+.favorites-text {
+    margin-right: 4px;
+}
+
+.favorites-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.heart-icon {
+    width: 18px;
+    height: 18px;
     color: #ff6b35;
-    background: rgba(255, 107, 53, 0.15);
+    transition: all 0.3s ease;
+}
+
+.favorites-link:hover .heart-icon {
+    transform: scale(1.2);
+    color: #ff5252;
+}
+
+/* Favorites Count Badge */
+.favorites-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff6b35;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+    line-height: 1;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .user-img
 {
     font-size: 30px;
     cursor: pointer;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header-container {
+        padding: 8px 15px;
+        margin: -50px -100px 20px;
+    }
+
+    .header-nav {
+        gap: 20px;
+    }
+
+    .nav-link {
+        font-size: 0.9rem;
+        padding: 6px 12px;
+    }
+
+    .favorites-text {
+        display: none;
+    }
+
+    .heart-icon {
+        width: 16px;
+        height: 16px;
+    }
+
+    .favorites-count {
+        font-size: 0.6rem;
+        padding: 1px 4px;
+        min-width: 14px;
+        height: 14px;
+        top: -6px;
+        right: -6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-container {
+        padding: 6px 10px;
+    }
+
+    .header-nav {
+        gap: 15px;
+    }
+
+    .nav-link {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+    }
+
+    .heart-icon {
+        width: 14px;
+        height: 14px;
+    }
 }

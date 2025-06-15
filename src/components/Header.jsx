@@ -1,9 +1,10 @@
-// src/components/Header.jsx - Safe Firebase Integration
+// src/components/Header.jsx - Fixed Navigation Issues
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Header.css';
 import { GiSpoon } from 'react-icons/gi';
 import { BiSolidUserCircle } from 'react-icons/bi';
+import { useFavorites } from '../context/FavoritesContext';
 import UserSidebar from './UserSidebar';
 
 const Header = () => {
@@ -12,6 +13,7 @@ const Header = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const { favorites } = useFavorites();
 
   // Helper function to get user from localStorage
 const getLocalStorageUser = () => {
@@ -136,6 +138,16 @@ const getLocalStorageUser = () => {
     }
   };
 
+  // Handle My Favorites click
+  const handleFavoritesClick = (e) => {
+    if (!user) {
+      // If not logged in, redirect to login
+      e.preventDefault();
+      navigate('/login');
+    }
+    // If logged in, normal Link behavior will work
+  };
+
   const handleLogout = async () => {
     try {
       // Try Firebase logout first
@@ -210,7 +222,34 @@ const getLocalStorageUser = () => {
         
         {/* Navigation Menu */}
         <nav className="header-nav">
-          <Link to="/" className="nav-link">Home</Link>
+          <Link 
+            to="/" 
+            className="nav-link"
+          >
+            Home
+          </Link>
+          
+          {/* My Favorites - ALWAYS VISIBLE */}
+          <Link 
+            to="/my-favorites" 
+            className="nav-link favorites-link"
+            onClick={handleFavoritesClick}
+          >
+            <span className="favorites-text">My Favorites</span>
+            <div className="favorites-icon">
+              <svg 
+                viewBox="0 0 24 24" 
+                fill="currentColor" 
+                className="heart-icon"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              {/* Favorites count badge - ONLY SHOW IF LOGGED IN AND HAS FAVORITES */}
+              {user && favorites.length > 0 && (
+                <span className="favorites-count">{favorites.length}</span>
+              )}
+            </div>
+          </Link>
         </nav>
         
         {user ? (

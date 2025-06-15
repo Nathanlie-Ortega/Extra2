@@ -3,6 +3,7 @@ import './Recipe.css';
 import { useParams } from 'react-router-dom';
 import { API_KEY } from '../assets/API_KEY';
 import { Button, Skeleton } from '@mui/material';
+import FavoriteButton from '../components/FavoriteButton';
 
 const Recipe = () => {
 
@@ -63,7 +64,21 @@ const Recipe = () => {
 
     return (
         <div className="recipe-container-main">
-            <h1>{details?.title}</h1>
+            <div className="recipe-title-with-favorite">
+                <h1>{details?.title}</h1>
+                <div className="recipe-favorite-btn">
+                    <FavoriteButton 
+                        recipe={{
+                            id: details.id,
+                            title: details.title,
+                            image: details.image,
+                            summary: details.summary?.replace(/<[^>]*>/g, '') || ''
+                        }}
+                        size="large"
+                        showToast={true}
+                    />
+                </div>
+            </div>
             <div className="recipe-container">
                 <div className="recipe-container-left">
                     <img src={details?.image} className='recipe-imgs' />
@@ -119,7 +134,9 @@ const Recipe = () => {
                                     <div className="step" key={data?.step}>
                                         <h2>Step - {data?.number}</h2>
                                         <p>{data?.step}</p>
-                                        <h4>Ingredients - {data?.ingredients[0]?.name}</h4>
+                                        {data?.ingredients?.[0]?.name && (
+                                            <h4>Ingredients - {data?.ingredients[0]?.name}</h4>
+                                        )}
                                     </div>
                                 ))}
                             </div>

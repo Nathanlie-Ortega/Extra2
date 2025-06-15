@@ -1,15 +1,15 @@
-import './App.css'
+import { FavoritesProvider } from './context/FavoritesContext';
+import './App.css';
 import Pages from './pages/Pages';
-import Header from './components/Header';
 
 function App() {
-  
-
   return (
-    <div className="app-container"> 
-      <Pages />
-    </div>
+    <FavoritesProvider>
+      <div className="app-container"> 
+        <Pages />
+      </div>
+    </FavoritesProvider>
   )
 }
 
-export default App
+export default App;
