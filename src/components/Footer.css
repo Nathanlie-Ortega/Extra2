@@ -1,0 +1,58 @@
+/* src/components/Footer.css - Fixed Footer Always at Bottom */
+.app-footer {
+  margin: 30px -100px -50px -100px; /* Full negative margins to extend beyond container */
+  padding: 15px 20px;
+  background-color: #202020;
+  color: white;
+  position: relative;
+  z-index: 999;
+  box-shadow: 0px 0px 3px 1px black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: auto; /* This pushes footer to bottom when content is short */
+  width: calc(100% + 315px); /* Increased from 200px to 220px for better coverage */
+  left: -110px; /* Adjusted offset to center the extended width */
+}
+
+.footer-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.footer-text {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: white;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-footer {
+    padding: 12px 15px;
+    margin: 20px -100px -50px -100px; /* Keep negative margins */
+    width: calc(100% + 220px); /* Increased width for better coverage */
+    left: -110px; /* Adjusted offset to center */
+  }
+  
+  .footer-text {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-footer {
+    padding: 10px 10px;
+    margin: 15px -100px -50px -100px; /* Keep negative margins */
+    width: calc(100% + 220px); /* Increased width for better coverage */
+    left: -110px; /* Adjusted offset to center */
+  }
+  
+  .footer-text {
+    font-size: 0.75rem;
+  }
+}

@@ -1,0 +1,6 @@
+/* src/App.css - Flexbox layout to push footer to bottom */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
